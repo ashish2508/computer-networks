@@ -8,7 +8,7 @@ separate character variables and print the content of those variables.
 int main() {
   unsigned int n;
   printf("Enter the number (e.g., 0x12345678):");
-  scanf("%d", &n); 
+  scanf("%x", &n); 
   unsigned char *byte_ptr = (unsigned char *)&n; 
   puts("Extracted Bytes (order depends on system's endianness):\n");
   for (int i = 0; i < sizeof(unsigned int); i++) {
