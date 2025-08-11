@@ -39,8 +39,7 @@ int main(int argc, char *argv[]) {
 
   if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof(my_addr)) < 0) {
     perror("bind failed");
-    close(sockfd);
-    exit(EXIT_FAILURE);
+    close(sockfd) exit(EXIT_FAILURE);
   }
 
   fd_set fds;

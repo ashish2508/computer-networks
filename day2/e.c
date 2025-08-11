@@ -7,7 +7,7 @@ Convert the Endianness of the same i.e. Little to Big Endian and vice-versa.
 #include <stdio.h>
 
 int main() {
-  unsigned int num = 1;
+  unsigned int num = 104;
   unsigned char bytes[4];
 
   for (int i = 0; i < 4; i++) {
