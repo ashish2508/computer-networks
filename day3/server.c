@@ -1,66 +1,86 @@
-#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <unistd.h>
-#define PORT 8080
-#define BUFFER_SIZE 1024
-int main(int argc, char const *argv[]) {
-  int server_fd, new_socket;
-  struct sockaddr_in address;
-  int opt = 1;
-  socklen_t addrlen = sizeof(address);
-  char buffer[BUFFER_SIZE] = {0};
-  char message[BUFFER_SIZE];
-  if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    perror("socket failed");
+
+#define MAXLINE 1024
+
+int main(int argc, char *argv[]) {
+  if (argc != 2) {
+    printf("Usage: %s <server_port>\n", argv[0]);
     exit(EXIT_FAILURE);
   }
-  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-                 sizeof(opt))) {
-    perror("setsockopt");
+
+  int server_port = atoi(argv[1]);
+
+  int sockfd;
+  char buffer[MAXLINE];
+  struct sockaddr_in server_addr, client_addr;
+
+  if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    perror("socket creation failed");
     exit(EXIT_FAILURE);
   }
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(PORT);
-  if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+
+  memset(&server_addr, 0, sizeof(server_addr));
+  memset(&client_addr, 0, sizeof(client_addr));
+
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = INADDR_ANY;
+  server_addr.sin_port = htons(server_port);
+
+  if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
     perror("bind failed");
+    close(sockfd);
     exit(EXIT_FAILURE);
   }
-  if (listen(server_fd, 3) < 0) {
-    perror("listen");
-    exit(EXIT_FAILURE);
-  }
-  if ((new_socket = accept(server_fd, (struct sockaddr *)&address, &addrlen)) <
-      0) {
-    perror("accept");
-    exit(EXIT_FAILURE);
-  }
-  printf("Client connected. Start chatting (type 'bye' to exit).\n");
+
+  fd_set fds;
+  int n;
+  socklen_t len;
+  int client_connected = 0;
+  printf("Server is running on port %d. Waiting for messages. Type 'exit' to "
+         "quit.\n",
+         server_port);
+
   while (1) {
-    memset(buffer, 0, BUFFER_SIZE);
-    ssize_t valread = read(new_socket, buffer, BUFFER_SIZE - 1);
-    if (valread <= 0) {
-      printf("Client disconnected.\n");
-      break;
+    FD_ZERO(&fds);
+    FD_SET(0, &fds); // stdin
+    FD_SET(sockfd, &fds);
+
+    int maxfd = (sockfd > 0 ? sockfd : 0) + 1;
+    select(maxfd, &fds, NULL, NULL, NULL);
+
+    if (FD_ISSET(0, &fds)) {
+      if (!client_connected) {
+        printf("No client connected yet. Cannot send.\n");
+        continue;
+      }
+      fgets(buffer, MAXLINE, stdin);
+      buffer[strcspn(buffer, "\n")] = '\0';
+      sendto(sockfd, buffer, strlen(buffer), 0, (struct sockaddr *)&client_addr,
+             sizeof(client_addr));
+      if (strcmp(buffer, "exit") == 0) {
+        printf("Sent 'exit'. Exiting...\n");
+        break;
+      }
     }
-    printf("Client: %s\n", buffer);
-    if (strcmp(buffer, "bye") == 0) {
-      printf("Chat ended by client.\n");
-      break;
-    }
-    printf("Server: ");
-    fgets(message, BUFFER_SIZE, stdin);
-    message[strcspn(message, "\n")] = 0; // Remove newline
-    send(new_socket, message, strlen(message), 0);
-    if (strcmp(message, "bye") == 0) {
-      printf("Chat ended.\n");
-      break;
+
+    if (FD_ISSET(sockfd, &fds)) {
+      len = sizeof(client_addr);
+      n = recvfrom(sockfd, buffer, MAXLINE, 0, (struct sockaddr *)&client_addr,
+                   &len);
+      buffer[n] = '\0';
+      printf("Received from client: %s\n", buffer);
+      client_connected = 1;
+      if (strcmp(buffer, "exit") == 0) {
+        printf("Received 'exit'. Exiting...\n");
+        break;
+      }
     }
   }
-  close(new_socket);
-  close(server_fd);
+
+  close(sockfd);
   return 0;
 }
