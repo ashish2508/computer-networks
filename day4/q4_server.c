@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  int server_port = atoi(argv[1]);
+  int server_port = atoi(argv[1]) + 1;
 
   int sockfd;
   char buffer[MAXLINE];
@@ -52,15 +52,27 @@ int main(int argc, char *argv[]) {
     int maxfd = (sockfd > 0 ? sockfd : 0) + 1;
     select(maxfd, &fds, NULL, NULL, NULL);
 
+    if (FD_ISSET(0, &fds)) {
+      if (!client_connected) {
+        printf("No client connected yet. Cannot send.\n");
+        continue;
+      }
+      fgets(buffer, MAXLINE, stdin);
+      buffer[strcspn(buffer, "\n")] = '\0';
+      sendto(sockfd, buffer, strlen(buffer), 0, (struct sockaddr *)&client_addr,
+             sizeof(client_addr));
+      if (strcmp(buffer, "exit") == 0) {
+        printf("Sent 'exit'. Exiting...\n");
+        break;
+      }
+    }
+
     if (FD_ISSET(sockfd, &fds)) {
       len = sizeof(client_addr);
       n = recvfrom(sockfd, buffer, MAXLINE, 0, (struct sockaddr *)&client_addr,
                    &len);
       buffer[n] = '\0';
       printf("Received from client: %s\n", buffer);
-      sendto(sockfd, buffer, strlen(buffer), 0, (struct sockaddr *)&client_addr,
-             sizeof(client_addr));
-
       client_connected = 1;
       if (strcmp(buffer, "exit") == 0) {
         printf("Received 'exit'. Exiting...\n");
