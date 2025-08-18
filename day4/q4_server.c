@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  int server_port = atoi(argv[1]) + 1;
+  int server_port = atoi(argv[1]);
 
   int sockfd;
   char buffer[MAXLINE];
