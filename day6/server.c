@@ -58,6 +58,6 @@ int main() {
       puts("Client Disconnected");
     }
   }
-
+  close(server_fd);
   return 0;
 }
