@@ -14,7 +14,6 @@ int main() {
   char *msg = "Hello from server";
   FILE *fp = fopen("data.txt", "r");
   fread(buffer, 1, N, fp);
-  buffer[N] = '\0';
   fclose(fp);
   if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
     perror("socket failed");
