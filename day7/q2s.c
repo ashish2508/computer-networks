@@ -46,12 +46,10 @@ int main() {
     if (bytes_read > 0) {
       buffer[bytes_read] = '\0';
       printf("Message from client: %s\n", buffer);
-      char *response = buffer;
-      send(client_fd, response, strlen(response), 0);
-      close(client_fd);
       puts("Client Disconnected");
     }
   }
   close(server_fd);
+  exit(EXIT_SUCCESS);
   return 0;
 }
