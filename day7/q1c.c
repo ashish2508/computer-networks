@@ -7,7 +7,7 @@
 #define MAXLINE 1024
 #define PORT 5000
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char *argv[]) {
   char *msg = argv[1];
   struct sockaddr_in serv_addr;
   int sock = 0;
