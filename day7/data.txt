@@ -1,1 +1,1 @@
-hello from server data
+Reading from file

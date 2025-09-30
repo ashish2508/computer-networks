@@ -11,7 +11,6 @@ int main() {
   int server_fd, client_fd;
   int addrlen = sizeof(address);
   char buffer[N] = {0};
-  char *msg = "Hello from server";
   FILE *fp = fopen("data.txt", "r");
   fread(buffer, 1, N, fp);
   fclose(fp);
